@@ -41,9 +41,7 @@ public class NotificationController {
     }
     
     private User getUser(Authentication authentication) {
-        if (authentication == null) {
-             return userRepository.findAll().stream().findFirst().orElseThrow();
-        }
-        return userRepository.findAll().stream().findFirst().orElseThrow();
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found or unauthorized"));
     }
 }

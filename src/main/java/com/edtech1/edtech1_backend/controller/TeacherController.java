@@ -58,18 +58,8 @@ public class TeacherController {
     }
     
     private User getTeacher(Authentication authentication) {
-        // If auth is null (dev mode), return the first teacher found
-        if (authentication == null) {
-            return userRepository.findAll().stream()
-                    .filter(u -> u.getRole().name().equals("TEACHER"))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("No teacher found"));
-        }
-        // In real auth, find by email
-        // return userRepository.findByEmail(authentication.getName()).orElseThrow(...);
-         return userRepository.findAll().stream()
-                    .filter(u -> u.getRole().name().equals("TEACHER"))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("No teacher found"));
+        return userRepository.findByEmail(authentication.getName())
+                .filter(u -> u.getRole().name().equals("TEACHER"))
+                .orElseThrow(() -> new RuntimeException("Teacher not found or unauthorized"));
     }
 }

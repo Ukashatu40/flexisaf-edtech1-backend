@@ -1,10 +1,17 @@
 package com.edtech1.edtech1_backend.controller;
 
+import com.edtech1.edtech1_backend.model.Role;
 import com.edtech1.edtech1_backend.model.User;
-import com.edtech1.edtech1_backend.service.AuthService;
+import com.edtech1.edtech1_backend.repository.UserRepository;
+import com.edtech1.edtech1_backend.security.JwtTokenProvider;
+import com.edtech1.edtech1_backend.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,22 +22,48 @@ import java.util.Map;
 public class AuthController {
 
     @Autowired
-    private AuthService authService;
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtTokenProvider tokenProvider;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @PostMapping(value = "/register", consumes = "multipart/form-data")
     public ResponseEntity<?> register(@RequestParam("name") String name,
                                       @RequestParam("email") String email,
                                       @RequestParam("password") String password,
                                       @RequestParam("role") String role,
-                                      @RequestParam(value = "teacherId", required = false) String teacherId,
-                                      @RequestParam(value = "schoolName", required = false) String schoolName,
-                                      @RequestParam(value = "credentialFile", required = false) MultipartFile credentialFile) {
-        try {
-            User user = authService.registerUser(name, email, password, role, teacherId, schoolName, credentialFile);
-            return ResponseEntity.ok(user);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+                                      @RequestParam(value = "file", required = false) MultipartFile file) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            return ResponseEntity.badRequest().body("Email already in use");
         }
+
+        User user = new User();
+        user.setName(name);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRole(Role.valueOf(role.toUpperCase()));
+
+        if (Role.TEACHER.name().equalsIgnoreCase(role)) {
+            user.setStatus("PENDING");
+            if (file != null) {
+                String path = fileStorageService.storeFile(file);
+                user.setCredentialFilePath(path);
+            }
+        } else {
+            user.setStatus("ACTIVE");
+        }
+
+        userRepository.save(user);
+        return ResponseEntity.ok("User registered successfully");
     }
 
     @PostMapping("/login")
@@ -38,9 +71,20 @@ public class AuthController {
         try {
             String email = loginRequest.get("email");
             String password = loginRequest.get("password");
-            User user = authService.loginUser(email, password);
-            // In a real app, generate JWT here. For now returning user details.
-            return ResponseEntity.ok(user);
+
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, password)
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = tokenProvider.generateToken(authentication);
+            
+            User user = userRepository.findByEmail(email).orElseThrow();
+
+            return ResponseEntity.ok(Map.of(
+                "token", jwt,
+                "user", user
+            ));
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
         }

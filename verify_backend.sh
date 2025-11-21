@@ -14,60 +14,78 @@ print_header() {
 # Create a dummy file for upload tests
 echo "This is a test assignment submission." > test_upload.txt
 
-# 1. Teacher Dashboard
-print_header "Teacher: Dashboard Stats"
-curl -s "$BASE_URL/teacher/dashboard/stats" | python3 -m json.tool
+# 1. Authentication & Setup
+echo "1. Authentication..."
 
-print_header "Teacher: Get Classes"
-curl -s "$BASE_URL/teacher/classes" | python3 -m json.tool
+# Login Teacher (Seeded)
+echo "Logging in Teacher (Seeded)..."
+TEACHER_LOGIN=$(curl -X POST "$BASE_URL/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"teacher@test.com", "password":"password"}' -s)
 
-# 2. Student Dashboard
-print_header "Student: Dashboard Summary"
-curl -s "$BASE_URL/student/dashboard-summary" | python3 -m json.tool
+TEACHER_TOKEN=$(echo $TEACHER_LOGIN | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+echo "Teacher Token: $TEACHER_TOKEN"
 
-print_header "Student: Get Profile"
-curl -s "$BASE_URL/student/profile" | python3 -m json.tool
+# Login Student (Seeded)
+echo "Logging in Student (Seeded)..."
+STUDENT_LOGIN=$(curl -X POST "$BASE_URL/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"student@test.com", "password":"password"}' -s)
 
-# 3. Assignments Flow
-print_header "Teacher: Create Assignment"
-# Capture the response to get the ID if needed, but for now just printing
-curl -s -X POST "$BASE_URL/teacher/assignments/create" \
-     -H "Content-Type: application/json" \
-     -d '{"title": "Physics Project", "description": "Build a model rocket"}' | python3 -m json.tool
+STUDENT_TOKEN=$(echo $STUDENT_LOGIN | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+echo "Student Token: $STUDENT_TOKEN"
 
-print_header "Teacher: List Assignments"
-curl -s "$BASE_URL/teacher/assignments" | python3 -m json.tool
+# 2. Teacher Dashboard
+echo -e "\n2. Teacher Dashboard..."
+curl -H "Authorization: Bearer $TEACHER_TOKEN" "$BASE_URL/teacher/dashboard-stats" -s | grep "totalStudents" && echo "Stats OK" || echo "Stats Failed"
+curl -H "Authorization: Bearer $TEACHER_TOKEN" "$BASE_URL/teacher/classes" -s | grep "name" && echo "Classes OK" || echo "Classes Failed"
 
-print_header "Student: List Assignments"
-curl -s "$BASE_URL/student/assignments" | python3 -m json.tool
+# 3. Student Dashboard
+echo -e "\n3. Student Dashboard..."
+curl -H "Authorization: Bearer $STUDENT_TOKEN" "$BASE_URL/student/dashboard-summary" -s | grep "completedAssignments" && echo "Summary OK" || echo "Summary Failed"
+curl -H "Authorization: Bearer $STUDENT_TOKEN" "$BASE_URL/student/profile" -s | grep "email" && echo "Profile OK" || echo "Profile Failed"
 
-# We need an assignment ID to submit to. Let's assume ID 1 exists from DataSeeder.
-ASSIGNMENT_ID=1
-print_header "Student: Submit Assignment (ID: $ASSIGNMENT_ID)"
-curl -s -X POST "$BASE_URL/student/assignments/$ASSIGNMENT_ID/submit" \
-     -F "file=@test_upload.txt"
+# 4. Assignments
+echo -e "\n4. Assignments..."
+# Create Assignment (Teacher)
+curl -X POST "$BASE_URL/teacher/assignments/create" \
+  -H "Authorization: Bearer $TEACHER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Math HW", "description":"Solve problems", "dueDate":"2023-12-31", "teacherId":1}' -s > /dev/null
+echo "Assignment Created"
 
-# 4. Messaging
-print_header "Messages: Get Contacts"
-curl -s "$BASE_URL/messages/contacts" | python3 -m json.tool
+# List Assignments (Student)
+ASSIGNMENT_ID=$(curl -H "Authorization: Bearer $STUDENT_TOKEN" "$BASE_URL/student/assignments" -s | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+echo "Assignment ID: $ASSIGNMENT_ID"
 
-print_header "Messages: Send Message"
-curl -s -X POST "$BASE_URL/messages/send" \
-     -H "Content-Type: application/json" \
-     -d '{"receiverId": 1, "content": "Hello Teacher, I have a question."}' 
+# Submit Assignment (Student)
+if [ ! -z "$ASSIGNMENT_ID" ]; then
+  curl -X POST "$BASE_URL/student/assignments/$ASSIGNMENT_ID/submit" \
+    -H "Authorization: Bearer $STUDENT_TOKEN" \
+    -F "file=@test_upload.txt" \
+    -s > /dev/null
+  echo "Assignment Submitted"
+fi
 
-# 5. Notifications
-print_header "Notifications: List All"
-curl -s "$BASE_URL/notifications" | python3 -m json.tool
+# 5. Messaging
+echo -e "\n5. Messaging..."
+curl -H "Authorization: Bearer $STUDENT_TOKEN" "$BASE_URL/messages/contacts" -s | grep "id" && echo "Contacts OK" || echo "Contacts Failed"
+curl -X POST "$BASE_URL/messages/send" \
+  -H "Authorization: Bearer $STUDENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"receiverId":1, "content":"Hello Teacher"}' -s > /dev/null
+echo "Message Sent"
 
-# 6. Career Guidance
-print_header "Career: Get Quiz Questions"
-curl -s "$BASE_URL/career-quiz/questions" | python3 -m json.tool
+# 6. Notifications
+echo -e "\n6. Notifications..."
+curl -H "Authorization: Bearer $STUDENT_TOKEN" "$BASE_URL/notifications" -s | grep "message" && echo "Notifications OK" || echo "Notifications Failed"
 
-print_header "Career: Get Stories"
-curl -s "$BASE_URL/career-stories" | python3 -m json.tool
+# 7. Career
+echo -e "\n7. Career..."
+curl -H "Authorization: Bearer $STUDENT_TOKEN" "$BASE_URL/career-quiz/questions" -s | grep "question" && echo "Quiz Questions OK" || echo "Quiz Questions Failed"
+curl -H "Authorization: Bearer $STUDENT_TOKEN" "$BASE_URL/career-stories" -s | grep "title" && echo "Stories OK" || echo "Stories Failed"
 
 # Cleanup
 rm test_upload.txt
 
-echo -e "\n\n\033[1;32mTests Completed!\033[0m"
+echo -e "\nVerification Complete!\033[0m"

@@ -4,6 +4,8 @@ import com.edtech1.edtech1_backend.model.CareerStory;
 import com.edtech1.edtech1_backend.model.QuizQuestion;
 import com.edtech1.edtech1_backend.repository.CareerStoryRepository;
 import com.edtech1.edtech1_backend.repository.QuizQuestionRepository;
+import com.edtech1.edtech1_backend.model.User;
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,9 @@ public class CareerController {
     
     @Autowired
     private CareerStoryRepository careerStoryRepository;
+
+    @Autowired
+    private com.edtech1.edtech1_backend.repository.UserRepository userRepository;
 
     @GetMapping("/career-quiz/questions")
     public ResponseEntity<?> getQuizQuestions() {
@@ -45,6 +50,12 @@ public class CareerController {
         CareerStory story = careerStoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Story not found"));
         return ResponseEntity.ok(story);
+    }
+
+    // New private helper method for authentication logic
+    private User getUser(Authentication authentication) {
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found or unauthorized"));
     }
 
     @PostMapping("/mentor-chat/send")

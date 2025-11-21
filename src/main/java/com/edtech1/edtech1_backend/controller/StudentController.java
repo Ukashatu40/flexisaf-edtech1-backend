@@ -56,16 +56,8 @@ public class StudentController {
     }
     
     private User getStudent(Authentication authentication) {
-        if (authentication == null) {
-             return userRepository.findAll().stream()
-                    .filter(u -> u.getRole().name().equals("STUDENT"))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("No student found"));
-        }
-        // return userRepository.findByEmail(authentication.getName()).orElseThrow(...);
-        return userRepository.findAll().stream()
-                    .filter(u -> u.getRole().name().equals("STUDENT"))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("No student found"));
+        return userRepository.findByEmail(authentication.getName())
+                .filter(u -> u.getRole().name().equals("STUDENT"))
+                .orElseThrow(() -> new RuntimeException("Student not found or unauthorized"));
     }
 }

@@ -145,16 +145,8 @@ public class AssignmentController {
     }
     
     private User getUser(Authentication authentication, String role) {
-        if (authentication == null) {
-             return userRepository.findAll().stream()
-                    .filter(u -> u.getRole().name().equals(role))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("No user found"));
-        }
-        // return userRepository.findByEmail(authentication.getName()).orElseThrow(...);
-        return userRepository.findAll().stream()
-                    .filter(u -> u.getRole().name().equals(role))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("No user found"));
+        return userRepository.findByEmail(authentication.getName())
+                .filter(u -> u.getRole().name().equals(role))
+                .orElseThrow(() -> new RuntimeException("User not found or unauthorized"));
     }
 }

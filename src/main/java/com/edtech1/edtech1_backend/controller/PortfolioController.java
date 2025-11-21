@@ -58,10 +58,7 @@ public class PortfolioController {
     @GetMapping
     public ResponseEntity<?> getPortfolio(Authentication authentication) {
         // Similar mock user logic
-        User user = userRepository.findAll().stream()
-                .filter(u -> u.getRole().name().equals("STUDENT"))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No student found"));
+        User user = getUser(authentication);
                 
         List<Document> docs = documentRepository.findByStudent(user);
         return ResponseEntity.ok(docs);
@@ -80,5 +77,10 @@ public class PortfolioController {
     public ResponseEntity<?> getSharedPortfolio(@PathVariable Long studentId) {
         List<Document> docs = documentRepository.findByStudentId(studentId);
         return ResponseEntity.ok(docs);
+    }
+
+    private User getUser(Authentication authentication) {
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found or unauthorized"));
     }
 }
