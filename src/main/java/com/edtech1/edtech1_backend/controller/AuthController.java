@@ -53,7 +53,8 @@ public class AuthController {
         user.setRole(Role.valueOf(role.toUpperCase()));
 
         if (Role.TEACHER.name().equalsIgnoreCase(role)) {
-            user.setStatus("PENDING");
+            // user.setStatus("PENDING");  // TODO: Implement pending status
+            user.setStatus("ACTIVE"); // to be removed after admin approval functionality is implemented
             if (file != null) {
                 String path = fileStorageService.storeFile(file);
                 user.setCredentialFilePath(path);
