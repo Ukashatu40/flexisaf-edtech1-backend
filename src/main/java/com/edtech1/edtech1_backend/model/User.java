@@ -33,7 +33,15 @@ public class User {
     private String credentialFilePath;
 
     // Student specific fields
-    // (Add any if needed, e.g., grade level)
+    @ElementCollection
+    private java.util.List<String> courses;
+    
+    @ElementCollection
+    private java.util.List<String> classes;
+
+    // Teacher specific fields
+    @ElementCollection
+    private java.util.List<String> managedCourses;
 
     private LocalDateTime createdAt;
 
@@ -73,4 +81,13 @@ public class User {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public java.util.List<String> getCourses() { return courses; }
+    public void setCourses(java.util.List<String> courses) { this.courses = courses; }
+
+    public java.util.List<String> getClasses() { return classes; }
+    public void setClasses(java.util.List<String> classes) { this.classes = classes; }
+
+    public java.util.List<String> getManagedCourses() { return managedCourses; }
+    public void setManagedCourses(java.util.List<String> managedCourses) { this.managedCourses = managedCourses; }
 }
