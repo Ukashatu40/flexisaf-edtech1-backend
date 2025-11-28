@@ -61,7 +61,14 @@ public class StudentController {
         if (updates.containsKey("name")) {
             student.setName((String) updates.get("name"));
         }
-        // Add other fields as needed
+        
+        if (updates.containsKey("courses")) {
+            student.setCourses((List<String>) updates.get("courses"));
+        }
+        
+        if (updates.containsKey("classes")) {
+            student.setClasses((List<String>) updates.get("classes"));
+        }
         
         if (student != null) {
             userRepository.save(student);
