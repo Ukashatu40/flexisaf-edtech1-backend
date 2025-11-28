@@ -104,6 +104,24 @@ public class AuthController {
         return ResponseEntity.status(401).build();
     }
     
+    @PatchMapping("/update-profile")
+    public ResponseEntity<?> updateProfile(@RequestBody Map<String, Object> updates, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (updates.containsKey("managedCourses")) {
+            user.setManagedCourses((java.util.List<String>) updates.get("managedCourses"));
+        }
+        
+        // Allow name update here too if needed
+        if (updates.containsKey("name")) {
+            user.setName((String) updates.get("name"));
+        }
+
+        userRepository.save(user);
+        return ResponseEntity.ok(user);
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<?> logout() {
         // Client side logout (clear token)
