@@ -83,11 +83,7 @@ public class MessageController {
     }
     
     private User getUser(Authentication authentication) {
-        if (authentication == null) {
-             // Return first user for testing
-             return userRepository.findAll().stream().findFirst().orElseThrow();
-        }
-        // return userRepository.findByEmail(authentication.getName()).orElseThrow(...);
-        return userRepository.findAll().stream().findFirst().orElseThrow();
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found or unauthorized"));
     }
 }
