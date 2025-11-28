@@ -36,7 +36,23 @@ public class MessageController {
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody Map<String, Object> payload, Authentication authentication) {
         User sender = getUser(authentication);
-        Long receiverId = Long.parseLong(payload.get("receiverId").toString());
+        
+        Object receiverIdObj = payload.get("receiverId");
+        if (receiverIdObj == null) {
+            receiverIdObj = payload.get("receiverID"); // Fallback
+        }
+        
+        if (receiverIdObj == null) {
+            return ResponseEntity.badRequest().body("receiverId is required");
+        }
+        
+        Long receiverId;
+        try {
+            receiverId = Long.parseLong(receiverIdObj.toString());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body("Invalid receiverId format");
+        }
+
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new RuntimeException("Receiver not found"));
                 

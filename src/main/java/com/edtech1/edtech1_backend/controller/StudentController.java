@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,10 +28,23 @@ public class StudentController {
         long completed = submissionRepository.countByStudentAndGradeIsNotNull(student);
         long pending = submissionRepository.countByStudentAndGradeIsNull(student);
         
+        // Calculate Average Grade
+        List<com.edtech1.edtech1_backend.model.Submission> gradedSubmissions = submissionRepository.findByStudentAndGradeIsNotNull(student);
+        double averageGrade = gradedSubmissions.stream()
+                .mapToDouble(s -> {
+                    try {
+                        return Double.parseDouble(s.getGrade());
+                    } catch (NumberFormatException e) {
+                        return 0.0;
+                    }
+                })
+                .average()
+                .orElse(0.0);
+
         return ResponseEntity.ok(Map.of(
             "completedAssignments", completed,
             "pendingAssignments", pending,
-            "averageGrade", 92.5 // Placeholder
+            "averageGrade", averageGrade
         ));
     }
 

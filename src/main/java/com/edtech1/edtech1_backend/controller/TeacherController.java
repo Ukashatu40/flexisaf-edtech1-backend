@@ -42,11 +42,21 @@ public class TeacherController {
                 .filter(s -> s.getAssignment().getTeacher().getId().equals(teacher.getId()) && s.getGrade() == null)
                 .count();
 
+        // Recent submissions
+        List<com.edtech1.edtech1_backend.model.Submission> recentSubmissions = submissionRepository.findTop5ByAssignmentTeacherOrderBySubmittedAtDesc(teacher);
+        
+        // Progress Rate (Graded / Total Submissions)
+        List<com.edtech1.edtech1_backend.model.Submission> allSubmissions = submissionRepository.findByAssignmentTeacher(teacher);
+        long totalSubmissions = allSubmissions.size();
+        long gradedSubmissions = allSubmissions.stream().filter(s -> s.getGrade() != null).count();
+        
+        double progressRate = totalSubmissions == 0 ? 0 : ((double) gradedSubmissions / totalSubmissions) * 100;
+
         return ResponseEntity.ok(Map.of(
             "pendingReviews", pendingReviews,
             "totalStudents", totalStudents,
-            "progressRate", 85.5, // Placeholder logic for now
-            "recentSubmissions", List.of() // Placeholder
+            "progressRate", progressRate,
+            "recentSubmissions", recentSubmissions
         ));
     }
 

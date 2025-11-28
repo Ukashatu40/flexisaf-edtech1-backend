@@ -10,4 +10,11 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     List<Submission> findByAssignmentId(Long assignmentId);
     long countByStudentAndGradeIsNull(User student);
     long countByStudentAndGradeIsNotNull(User student);
+    
+    // For Teacher Dashboard
+    List<Submission> findTop5ByAssignmentTeacherOrderBySubmittedAtDesc(User teacher);
+    List<Submission> findByAssignmentTeacher(User teacher);
+    
+    // For Student Dashboard (Average Grade)
+    List<Submission> findByStudentAndGradeIsNotNull(User student);
 }
