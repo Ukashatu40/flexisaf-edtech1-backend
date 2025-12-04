@@ -8,6 +8,7 @@ EduLink360 is a comprehensive educational technology platform designed to bridge
 - **Role-Based Access Control**: Distinct features and data access for different roles.
 - **Dashboard**: Real-time statistics and summaries for teachers and students.
 - **Classroom Management**: Manage classes and student enrollments.
+- **Course Selection**: Students can select courses and classes; Teachers can manage their course load.
 - **Assignment System**: Create, list, submit, and grade assignments with file support.
 - **Messaging**: Internal messaging system between students and teachers.
 - **Notifications**: Real-time updates for important events (new assignments, grades).
@@ -17,17 +18,17 @@ EduLink360 is a comprehensive educational technology platform designed to bridge
 ## Technology Stack
 - **Language**: Java 17
 - **Framework**: Spring Boot 3.x
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL (Render Managed)
 - **Security**: Spring Security + JWT (JSON Web Tokens)
+- **Deployment**: Docker + Render
 - **Build Tool**: Maven
-- **File Storage**: Local filesystem (configurable)
 
 ## Getting Started
 
 ### Prerequisites
 - Java 17 SDK
 - Maven 3.x
-- PostgreSQL 14+
+- Docker (optional, for containerization)
 
 ### Installation
 1.  **Clone the repository**:
@@ -37,24 +38,20 @@ EduLink360 is a comprehensive educational technology platform designed to bridge
     ```
 
 2.  **Configure Database**:
-    - Create a PostgreSQL database named `edtech1` (or update `src/main/resources/application.properties`).
-    - Update username/password in `application.properties`:
-        ```properties
-        spring.datasource.url=jdbc:postgresql://localhost:5433/edtech1
-        spring.datasource.username=postgres
-        spring.datasource.password=your_password
-        ```
+    - The project is configured to use a remote Render database by default.
+    - To run locally with a local DB, update `src/main/resources/application.properties`.
 
-3.  **Build the project**:
-    ```bash
-    mvn clean install
-    ```
-
-4.  **Run the application**:
+3.  **Build & Run (Local)**:
     ```bash
     mvn spring-boot:run
     ```
     The server will start on `http://localhost:8080`.
+
+4.  **Build & Run (Docker)**:
+    ```bash
+    docker build -t edtech1-backend .
+    docker run -p 8080:8080 edtech1-backend
+    ```
 
 ### Data Seeding
 The application includes a `DataSeeder` that automatically populates the database with test users and data on startup if it's empty.
