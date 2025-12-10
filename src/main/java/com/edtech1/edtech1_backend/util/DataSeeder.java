@@ -33,6 +33,8 @@ public class DataSeeder implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // This runs on startup. We check if the database is empty and populate it with
+    // sample data for testing.
     @Override
     public void run(String... args) throws Exception {
         // 1. Ensure Users Exist
@@ -57,7 +59,7 @@ public class DataSeeder implements CommandLineRunner {
             teacher.setStatus("ACTIVE");
             userRepository.save(teacher);
         }
-        
+
         // 2. Seed Classroom if missing
         if (classroomRepository.count() == 0) {
             Classroom classroom = new Classroom();
@@ -66,7 +68,7 @@ public class DataSeeder implements CommandLineRunner {
             classroom.setStudents(List.of(student));
             classroomRepository.save(classroom);
         }
-        
+
         // 3. Seed Assignment if missing
         if (assignmentRepository.count() == 0) {
             Assignment assignment = new Assignment();
@@ -75,7 +77,7 @@ public class DataSeeder implements CommandLineRunner {
             assignment.setDueDate(LocalDateTime.now().plusDays(7));
             assignment.setTeacher(teacher);
             assignmentRepository.save(assignment);
-            
+
             // Seed Submission
             if (submissionRepository.count() == 0) {
                 Submission submission = new Submission();
@@ -85,7 +87,7 @@ public class DataSeeder implements CommandLineRunner {
                 submissionRepository.save(submission);
             }
         }
-        
+
         // 4. Seed Messages
         if (messageRepository.count() == 0) {
             Message msg = new Message();
@@ -94,7 +96,7 @@ public class DataSeeder implements CommandLineRunner {
             msg.setContent("Welcome to the class!");
             messageRepository.save(msg);
         }
-        
+
         // 5. Seed Notifications
         if (notificationRepository.count() == 0) {
             Notification notif = new Notification();
@@ -103,7 +105,7 @@ public class DataSeeder implements CommandLineRunner {
             notif.setRead(false);
             notificationRepository.save(notif);
         }
-        
+
         // 6. Seed Quiz Questions
         if (quizQuestionRepository.count() == 0) {
             QuizQuestion q1 = new QuizQuestion();
@@ -111,14 +113,14 @@ public class DataSeeder implements CommandLineRunner {
             q1.setOptions(List.of("Solving Puzzles", "Painting"));
             q1.setCorrectOption("Solving Puzzles");
             quizQuestionRepository.save(q1);
-            
+
             QuizQuestion q2 = new QuizQuestion();
             q2.setQuestion("Do you prefer working alone or in a team?");
             q2.setOptions(List.of("Alone", "Team"));
             q2.setCorrectOption("Team");
             quizQuestionRepository.save(q2);
         }
-        
+
         // 7. Seed Career Stories
         if (careerStoryRepository.count() == 0) {
             CareerStory s1 = new CareerStory();
@@ -127,7 +129,7 @@ public class DataSeeder implements CommandLineRunner {
             s1.setContent("Engineering is about solving problems...");
             careerStoryRepository.save(s1);
         }
-        
+
         System.out.println("Data seeding check completed!");
     }
 }

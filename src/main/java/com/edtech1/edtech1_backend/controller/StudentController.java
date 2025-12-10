@@ -17,19 +17,22 @@ public class StudentController {
 
     @Autowired
     private SubmissionRepository submissionRepository;
-    
+
     @Autowired
     private UserRepository userRepository;
 
+    // Calculates the student's progress. We count completed vs pending assignments
+    // and compute the average grade from graded submissions.
     @GetMapping("/dashboard-summary")
     public ResponseEntity<?> getDashboardSummary(Authentication authentication) {
         User student = getStudent(authentication);
-        
+
         long completed = submissionRepository.countByStudentAndGradeIsNotNull(student);
         long pending = submissionRepository.countByStudentAndGradeIsNull(student);
-        
+
         // Calculate Average Grade
-        List<com.edtech1.edtech1_backend.model.Submission> gradedSubmissions = submissionRepository.findByStudentAndGradeIsNotNull(student);
+        List<com.edtech1.edtech1_backend.model.Submission> gradedSubmissions = submissionRepository
+                .findByStudentAndGradeIsNotNull(student);
         double averageGrade = gradedSubmissions.stream()
                 .mapToDouble(s -> {
                     try {
@@ -42,10 +45,9 @@ public class StudentController {
                 .orElse(0.0);
 
         return ResponseEntity.ok(Map.of(
-            "completedAssignments", completed,
-            "pendingAssignments", pending,
-            "averageGrade", averageGrade
-        ));
+                "completedAssignments", completed,
+                "pendingAssignments", pending,
+                "averageGrade", averageGrade));
     }
 
     @GetMapping("/profile")
@@ -57,25 +59,27 @@ public class StudentController {
     @PatchMapping("/profile")
     public ResponseEntity<?> updateProfile(@RequestBody Map<String, Object> updates, Authentication authentication) {
         User student = getStudent(authentication);
-        
+
         if (updates.containsKey("name")) {
             student.setName((String) updates.get("name"));
         }
-        
+
         if (updates.containsKey("courses")) {
             student.setCourses((List<String>) updates.get("courses"));
         }
-        
+
         if (updates.containsKey("classes")) {
             student.setClasses((List<String>) updates.get("classes"));
         }
-        
+
         if (student != null) {
             userRepository.save(student);
         }
         return ResponseEntity.ok(student);
     }
-    
+
+    // Helper to retrieve the currently logged-in student. Throws an error if the
+    // user isn't a student.
     private User getStudent(Authentication authentication) {
         return userRepository.findByEmail(authentication.getName())
                 .filter(u -> u.getRole().name().equals("STUDENT"))

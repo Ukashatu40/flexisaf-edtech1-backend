@@ -14,6 +14,7 @@ public class FileStorageService {
 
     private final Path fileStorageLocation;
 
+    // Initialize the storage location. We create the directory if it doesn't exist.
     public FileStorageService() {
         this.fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
         try {
@@ -23,6 +24,7 @@ public class FileStorageService {
         }
     }
 
+    // Save the file to the disk. We generate a unique name to prevent collisions.
     public String storeFile(MultipartFile file) {
         // Normalize file name
         String originalFileName = file.getOriginalFilename();
@@ -47,7 +49,7 @@ public class FileStorageService {
             throw new RuntimeException("Could not store file " + fileName + ". Please try again!", ex);
         }
     }
-    
+
     public Path loadFile(String fileName) {
         return this.fileStorageLocation.resolve(fileName).normalize();
     }

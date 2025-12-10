@@ -22,8 +22,10 @@ public class AuthService {
     @Autowired
     private FileStorageService fileStorageService;
 
-    public User registerUser(String name, String email, String password, String roleStr, 
-                             String teacherId, String schoolName, MultipartFile credentialFile) {
+    // Handles the business logic for registering a new user. We check for existing
+    // emails, encode the password, and handle file uploads for teachers.
+    public User registerUser(String name, String email, String password, String roleStr,
+            String teacherId, String schoolName, MultipartFile credentialFile) {
         if (userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("Email already in use");
         }
@@ -32,7 +34,7 @@ public class AuthService {
         user.setName(name);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
-        
+
         Role role = Role.valueOf(roleStr.toUpperCase());
         user.setRole(role);
 
@@ -42,18 +44,20 @@ public class AuthService {
             user.setStatus("PENDING");
             user.setTeacherId(teacherId);
             user.setSchoolName(schoolName);
-            
+
             if (credentialFile != null && !credentialFile.isEmpty()) {
                 String fileName = fileStorageService.storeFile(credentialFile);
                 user.setCredentialFilePath(fileName);
             }
         } else {
-             user.setStatus("ACTIVE"); // Default for others if any
+            user.setStatus("ACTIVE"); // Default for others if any
         }
 
         return userRepository.save(user);
     }
 
+    // Validates user credentials. We also check if the account is PENDING approval
+    // before allowing login.
     public User loginUser(String email, String password) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
@@ -71,9 +75,9 @@ public class AuthService {
 
         return user;
     }
-    
+
     public User getUser(String email) {
-         return userRepository.findByEmail(email)
-                 .orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }

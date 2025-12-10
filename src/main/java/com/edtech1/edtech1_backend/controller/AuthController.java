@@ -36,12 +36,15 @@ public class AuthController {
     @Autowired
     private FileStorageService fileStorageService;
 
+    // Handle user registration. We accept multipart data to allow file uploads for
+    // teachers.
     @PostMapping(value = "/register", consumes = "multipart/form-data")
     public ResponseEntity<?> register(@RequestParam("name") String name,
-                                      @RequestParam("email") String email,
-                                      @RequestParam("password") String password,
-                                      @RequestParam("role") String role,
-                                      @RequestParam(value = "file", required = false) MultipartFile file) {
+            @RequestParam("email") String email,
+            @RequestParam("password") String password,
+            @RequestParam("role") String role,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+        // Check if the email is already taken to prevent duplicate accounts
         if (userRepository.findByEmail(email).isPresent()) {
             return ResponseEntity.badRequest().body("Email already in use");
         }
@@ -53,13 +56,18 @@ public class AuthController {
         user.setRole(Role.valueOf(role.toUpperCase()));
 
         if (Role.TEACHER.name().equalsIgnoreCase(role)) {
-            // user.setStatus("PENDING");  // TODO: Implement pending status
-            user.setStatus("ACTIVE"); // to be removed after admin approval functionality is implemented
+            // Teachers default to ACTIVE for now, but we might want to change this to
+            // PENDING later if we add an admin approval step.
+            user.setStatus("ACTIVE");
+
+            // If the teacher uploaded a credential file, save it and link the path to their
+            // profile
             if (file != null) {
                 String path = fileStorageService.storeFile(file);
                 user.setCredentialFilePath(path);
             }
         } else {
+            // Students are automatically active upon registration
             user.setStatus("ACTIVE");
         }
 
@@ -67,6 +75,7 @@ public class AuthController {
         return ResponseEntity.ok("User registered successfully");
     }
 
+    // Authenticate the user and return a JWT token if successful
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
         try {
@@ -74,18 +83,17 @@ public class AuthController {
             String password = loginRequest.get("password");
 
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email, password)
-            );
+                    new UsernamePasswordAuthenticationToken(email, password));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
             String jwt = tokenProvider.generateToken(authentication);
-            
+
+            // Fetch the full user details to return along with the token
             User user = userRepository.findByEmail(email).orElseThrow();
 
             return ResponseEntity.ok(Map.of(
-                "token", jwt,
-                "user", user
-            ));
+                    "token", jwt,
+                    "user", user));
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
         }
@@ -93,17 +101,16 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<?> me(Authentication authentication) {
-        // Since we disabled security for now (or using basic), this might be null if not authenticated via Spring Security.
-        // If we want to test this, we need to pass the user info or enable security.
-        // For this phase, let's assume the client sends the email or ID if we are stateless without JWT yet.
-        // OR, we can rely on the SecurityContext if we enabled Basic Auth.
-        // Given the plan, let's return a placeholder or the principal if available.
+        // Return the current authenticated user's details.
+        // If security is disabled or the user isn't logged in, this might be null.
         if (authentication != null) {
-             return ResponseEntity.ok(authentication.getPrincipal());
+            return ResponseEntity.ok(authentication.getPrincipal());
         }
         return ResponseEntity.status(401).build();
     }
-    
+
+    // Allow users to update specific profile fields. Using PatchMapping for partial
+    // updates.
     @PatchMapping("/update-profile")
     public ResponseEntity<?> updateProfile(@RequestBody Map<String, Object> updates, Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName())
@@ -112,7 +119,7 @@ public class AuthController {
         if (updates.containsKey("managedCourses")) {
             user.setManagedCourses((java.util.List<String>) updates.get("managedCourses"));
         }
-        
+
         // Allow name update here too if needed
         if (updates.containsKey("name")) {
             user.setName((String) updates.get("name"));

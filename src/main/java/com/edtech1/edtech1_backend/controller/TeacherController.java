@@ -24,18 +24,20 @@ public class TeacherController {
 
     @Autowired
     private SubmissionRepository submissionRepository;
-    
+
     @Autowired
     private UserRepository userRepository;
 
+    // Aggregates statistics for the teacher's dashboard. We calculate total
+    // students across all classes and count pending reviews.
     @GetMapping("/dashboard-stats")
     public ResponseEntity<?> getDashboardStats(Authentication authentication) {
         // Mock auth for now if null, or use a specific teacher
         User teacher = getTeacher(authentication);
-        
+
         List<Classroom> classes = classroomRepository.findByTeacher(teacher);
         int totalStudents = classes.stream().mapToInt(c -> c.getStudents().size()).sum();
-        
+
         // Pending reviews: submissions where grade is null
         // This is a simplification; ideally we filter by teacher's assignments
         long pendingReviews = submissionRepository.findAll().stream()
@@ -43,21 +45,22 @@ public class TeacherController {
                 .count();
 
         // Recent submissions
-        List<com.edtech1.edtech1_backend.model.Submission> recentSubmissions = submissionRepository.findTop5ByAssignmentTeacherOrderBySubmittedAtDesc(teacher);
-        
+        List<com.edtech1.edtech1_backend.model.Submission> recentSubmissions = submissionRepository
+                .findTop5ByAssignmentTeacherOrderBySubmittedAtDesc(teacher);
+
         // Progress Rate (Graded / Total Submissions)
-        List<com.edtech1.edtech1_backend.model.Submission> allSubmissions = submissionRepository.findByAssignmentTeacher(teacher);
+        List<com.edtech1.edtech1_backend.model.Submission> allSubmissions = submissionRepository
+                .findByAssignmentTeacher(teacher);
         long totalSubmissions = allSubmissions.size();
         long gradedSubmissions = allSubmissions.stream().filter(s -> s.getGrade() != null).count();
-        
+
         double progressRate = totalSubmissions == 0 ? 0 : ((double) gradedSubmissions / totalSubmissions) * 100;
 
         return ResponseEntity.ok(Map.of(
-            "pendingReviews", pendingReviews,
-            "totalStudents", totalStudents,
-            "progressRate", progressRate,
-            "recentSubmissions", recentSubmissions
-        ));
+                "pendingReviews", pendingReviews,
+                "totalStudents", totalStudents,
+                "progressRate", progressRate,
+                "recentSubmissions", recentSubmissions));
     }
 
     @GetMapping("/classes")
@@ -66,7 +69,8 @@ public class TeacherController {
         List<Classroom> classes = classroomRepository.findByTeacher(teacher);
         return ResponseEntity.ok(classes);
     }
-    
+
+    // Helper to ensure the user is a valid teacher.
     private User getTeacher(Authentication authentication) {
         return userRepository.findByEmail(authentication.getName())
                 .filter(u -> u.getRole().name().equals("TEACHER"))

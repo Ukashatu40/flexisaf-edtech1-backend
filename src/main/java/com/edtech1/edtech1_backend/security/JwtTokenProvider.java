@@ -22,11 +22,14 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
+    // Generate a new JWT token for the authenticated user
     public String generateToken(Authentication authentication) {
         String username = authentication.getName();
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
+        // We build the token with the username as the subject and set it to expire in
+        // the configured time.
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
@@ -35,6 +38,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    // Extract the username from the token claims so we can load the user details
     public String getUsernameFromJWT(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -45,6 +49,7 @@ public class JwtTokenProvider {
         return claims.getSubject();
     }
 
+    // Check if the token is valid (not expired, correct signature, etc.)
     public boolean validateToken(String authToken) {
         try {
             Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(authToken);
