@@ -33,7 +33,7 @@ EduLink360 is a comprehensive educational technology platform designed to bridge
 ### Installation
 1.  **Clone the repository**:
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/Ukashatu40/flexisaf-edtech1-backend.git
     cd edtech1-backend
     ```
 
